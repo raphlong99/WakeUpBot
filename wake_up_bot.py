@@ -36,7 +36,7 @@ async def create_user(update: Update, context: CallbackContext) -> None:
     user_name = update.message.from_user.username
 
     if user_id not in user_points:
-        user_points[user_id] = {'points': 0, 'username': user_name}
+        user_points[user_id] = {'points': 0, 'username': user_name, 'last_awake_date': None}
         save_points()
         logger.info(f"Created new user: {user_name} (ID: {user_id}) with 0 points.")
         await update.message.reply_text(f'User {user_name} created with 0 points.')
@@ -64,12 +64,19 @@ async def check_wake_up(update: Update, context: CallbackContext) -> None:
             await update.message.reply_text(f'User {user_name} does not exist. Please register using /createuser.')
             return
 
+        last_awake_date = user_points[user_id]['last_awake_date']
+        today = now.date().isoformat()
+
         if now.hour == 6 and now.minute < 31:
             if 'awake' in message_text:
-                user_points[user_id]['points'] += 1
-                save_points()
-                logger.info(f"User {user_name} ({user_id}) earned a point. Total: {user_points[user_id]['points']}")
-                await update.message.reply_text(f'Great job {user_name}! Your current points: {user_points[user_id]["points"]}')
+                if last_awake_date != today:
+                    user_points[user_id]['points'] += 1
+                    user_points[user_id]['last_awake_date'] = today
+                    save_points()
+                    logger.info(f"User {user_name} ({user_id}) earned a point. Total: {user_points[user_id]['points']}")
+                    await update.message.reply_text(f'Great job {user_name}! Your current points: {user_points[user_id]["points"]}')
+                else:
+                    await update.message.reply_text(f'You have already earned a point today, {user_name}!')
             else:
                 logger.info(f"Message from {user_name} ({user_id}) does not contain the keyword 'awake'.")
                 await update.message.reply_text('Are you sure you are awake?')
