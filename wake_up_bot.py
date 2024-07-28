@@ -26,17 +26,22 @@ def save_points():
     with open('points.json', 'w') as file:
         json.dump(user_points, file)
 
-# Asynchronous function to start the bot and register the user
+# Asynchronous function to start the bot
 async def start(update: Update, context: CallbackContext) -> None:
+    await update.message.reply_text('Welcome! Send your wake-up message containing "awake" between 6:00 AM and 6:30 AM to earn points.')
+
+# Asynchronous function to create a new user
+async def create_user(update: Update, context: CallbackContext) -> None:
     user_id = update.message.from_user.id
     user_name = update.message.from_user.username
 
     if user_id not in user_points:
         user_points[user_id] = {'points': 0, 'username': user_name}
         save_points()
-        logger.info(f"Registered new user: {user_name} (ID: {user_id}) with 0 points.")
-
-    await update.message.reply_text('Welcome! Send your wake-up message containing "awake" between 6:00 AM and 6:30 AM to earn points.')
+        logger.info(f"Created new user: {user_name} (ID: {user_id}) with 0 points.")
+        await update.message.reply_text(f'User {user_name} created with 0 points.')
+    else:
+        await update.message.reply_text(f'User {user_name} already exists.')
 
 # Asynchronous function to check wake-up time and message content
 async def check_wake_up(update: Update, context: CallbackContext) -> None:
@@ -55,6 +60,10 @@ async def check_wake_up(update: Update, context: CallbackContext) -> None:
 
     # Ensure message is from the specific group chat
     if chat_id == -1002211346895:  # Replace with your actual group chat ID
+        if user_id not in user_points:
+            await update.message.reply_text(f'User {user_name} does not exist. Please register using /createuser.')
+            return
+
         if now.hour == 6 and now.minute < 31:
             if 'awake' in message_text:
                 user_points[user_id]['points'] += 1
@@ -73,7 +82,8 @@ async def check_wake_up(update: Update, context: CallbackContext) -> None:
 # Asynchronous function to display the leaderboard
 async def leaderboard(update: Update, context: CallbackContext) -> None:
     leaderboard_message = "Leaderboard:\n"
-    for user in user_points.values():
+    sorted_users = sorted(user_points.values(), key=lambda x: x['points'], reverse=True)
+    for user in sorted_users:
         leaderboard_message += f"{user['username']}: {user['points']} points\n"
         logger.info(f"User on leaderboard: {user['username']} with {user['points']} points.")
     await update.message.reply_text(leaderboard_message)
@@ -87,6 +97,7 @@ def main() -> None:
     app = Application.builder().token(TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("createuser", create_user))
     app.add_handler(CommandHandler("leaderboard", leaderboard))
     app.add_handler(CommandHandler("getchatid", get_chat_id))  # Remove this line after getting the chat ID
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, check_wake_up))
