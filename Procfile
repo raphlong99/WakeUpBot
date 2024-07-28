@@ -1,0 +1,1 @@
+worker: python wake_up_bot.py
