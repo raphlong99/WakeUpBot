@@ -4,6 +4,7 @@ from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext
 from datetime import datetime
 import logging
+import pytz
 
 # Set up logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(level)s - %(message)s', level=logging.INFO)
@@ -85,9 +86,15 @@ async def check_wake_up(update: Update, context: CallbackContext) -> None:
     user_id = update.message.from_user.id
     username = update.message.from_user.username
     message_text = update.message.text.lower()
-    now = datetime.now()
-
-    logger.info(f"Received message at {now}. Chat ID: {chat_id}, User ID: {user_id}, Username: {username}")
+    
+    # Get current UTC time
+    now_utc = datetime.now(pytz.utc)
+    
+    # Convert to your local timezone (e.g., Asia/Singapore)
+    local_tz = pytz.timezone('Asia/Singapore')
+    now_local = now_utc.astimezone(local_tz)
+    
+    logger.info(f"Received message at {now_local}. Chat ID: {chat_id}, User ID: {user_id}, Username: {username}")
 
     if chat_id == -1002211346895:  # Replace with your actual group chat ID
         user_data = load_user(user_id)
@@ -96,9 +103,9 @@ async def check_wake_up(update: Update, context: CallbackContext) -> None:
             return
 
         _, _, points, last_awake_date = user_data
-        today = now.date()
+        today = now_local.date()
 
-        if now.hour == 6 and now.minute < 31:
+        if now_local.hour == 6 and now_local.minute < 31:
             if 'awake' in message_text:
                 if last_awake_date != today:
                     points += 1
@@ -108,7 +115,7 @@ async def check_wake_up(update: Update, context: CallbackContext) -> None:
                 else:
                     await update.message.reply_text(f'You have already earned a point today, {username}! 🐕')
             else:
-                logger.info(f"Message from {username} ({user_id}) does not contain the keyword 'awake'.")
+                logger.info(f"Message from {username} ({user_id}) does not contain the keyword "awake".")
                 await update.message.reply_text('Are you sure you are awake? 🐶')
         else:
             logger.info(f"Message from {username} ({user_id}) is outside the allowed time window.")
