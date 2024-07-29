@@ -213,12 +213,12 @@ def main():
     app = Application.builder().token("YOUR_TELEGRAM_BOT_TOKEN").build()
 
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("createuser", createuser))
+    app.add_handler(CommandHandler("createuser", create_user))
     app.add_handler(CommandHandler("leaderboard", leaderboard))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, check_wake_up))
-    app.add_handler(CommandHandler("whopays", whopays))
+    app.add_handler(CommandHandler("whopays", who_pays))
     app.add_handler(CommandHandler("forfeit", forfeit))
-    app.add_handler(CommandHandler("help", help_command))
+    app.add_handler(CommandHandler("help", help))
 
     logger.info("Bot is starting...")
     app.run_polling()
