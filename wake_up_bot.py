@@ -4,6 +4,7 @@ from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext
 from datetime import datetime
 import logging
+import pytz
 
 # Set up logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(level)s - %(message)s', level=logging.INFO)
@@ -85,7 +86,12 @@ async def check_wake_up(update: Update, context: CallbackContext) -> None:
     user_id = update.message.from_user.id
     username = update.message.from_user.username
     message_text = update.message.text.lower()
-    now = datetime.now()
+    # Get current UTC time
+    now_utc = datetime.now(pytz.utc)
+    
+    # Convert to your local timezone (e.g., Asia/Singapore)
+    local_tz = pytz.timezone('Asia/Singapore')
+    now_local = now_utc.astimezone(local_tz)
 
     logger.info(f"Received message at {now}. Chat ID: {chat_id}, User ID: {user_id}, Username: {username}")
 
@@ -96,9 +102,9 @@ async def check_wake_up(update: Update, context: CallbackContext) -> None:
             return
 
         _, _, points, last_awake_date = user_data
-        today = now.date()
+        today = now_local.date()
 
-        if now.hour == 6 and now.minute < 31:
+        if now_local.hour == 6 and now_local.minute < 31:
             if 'awake' in message_text:
                 if last_awake_date != today:
                     points += 1
