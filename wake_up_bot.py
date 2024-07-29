@@ -115,7 +115,7 @@ async def check_wake_up(update: Update, context: CallbackContext) -> None:
                 else:
                     await update.message.reply_text(f'You have already earned a point today, {username}! 🐕')
             else:
-                logger.info(f"Message from {username} ({user_id}) does not contain the keyword "awake".")
+                logger.info(f"Message from {username} ({user_id}) does not contain the keyword 'awake'.")
                 await update.message.reply_text('Are you sure you are awake? 🐶')
         else:
             logger.info(f"Message from {username} ({user_id}) is outside the allowed time window.")
