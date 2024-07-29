@@ -86,13 +86,18 @@ async def check_wake_up(update: Update, context: CallbackContext) -> None:
     user_id = update.message.from_user.id
     username = update.message.from_user.username
     message_text = update.message.text.lower()
+    
+    if 'awake' not in message_text:
+        logger.info(f"Message from {username} ({user_id}) does not contain the keyword 'awake'. Ignoring.")
+        return
+
     # Get current UTC time
     now_utc = datetime.now(pytz.utc)
     
     # Convert to your local timezone (e.g., Asia/Singapore)
     local_tz = pytz.timezone('Asia/Singapore')
     now_local = now_utc.astimezone(local_tz)
-
+    
     logger.info(f"Received message at {now_local}. Chat ID: {chat_id}, User ID: {user_id}, Username: {username}")
 
     if chat_id == -1002211346895:  # Replace with your actual group chat ID
@@ -105,17 +110,13 @@ async def check_wake_up(update: Update, context: CallbackContext) -> None:
         today = now_local.date()
 
         if now_local.hour == 6 and now_local.minute < 31:
-            if 'awake' in message_text:
-                if last_awake_date != today:
-                    points += 1
-                    save_user(user_id, username, points, today)
-                    logger.info(f"User {username} ({user_id}) earned a point. Total: {points}")
-                    await update.message.reply_text(f'Good job, {username}! You earned a point! 🐾 Your current points: {points} 🏆')
-                else:
-                    await update.message.reply_text(f'You have already earned a point today, {username}! 🐕')
+            if last_awake_date != today:
+                points += 1
+                save_user(user_id, username, points, today)
+                logger.info(f"User {username} ({user_id}) earned a point. Total: {points}")
+                await update.message.reply_text(f'Good job, {username}! You earned a point! 🐾 Your current points: {points} 🏆')
             else:
-                logger.info(f"Message from {username} ({user_id}) does not contain the keyword 'awake'.")
-                await update.message.reply_text('Are you sure you are awake? 🐶')
+                await update.message.reply_text(f'You have already earned a point today, {username}! 🐕')
         else:
             logger.info(f"Message from {username} ({user_id}) is outside the allowed time window.")
             await update.message.reply_text('Too late or too early! Try again between 6:00 AM and 6:30 AM. 🕰️')
