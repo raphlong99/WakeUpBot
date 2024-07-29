@@ -181,6 +181,13 @@ async def forfeit(update: Update, context: CallbackContext) -> None:
     else:
         await update.message.reply_text('Keep up the good work! Good sleep leads to good productivity. 🐾')
 
+# Command: /timenow
+async def time_now(update: Update, context: CallbackContext) -> None:
+    now_utc = datetime.now(pytz.utc)
+    local_tz = pytz.timezone('Asia/Singapore')
+    now_local = now_utc.astimezone(local_tz)
+    await update.message.reply_text(f'The current local time is: {now_local.strftime('%Y-%m-%d %H:%M:%S %Z%z')} 🕰️')
+
 # Command: /help
 async def help(update: Update, context: CallbackContext) -> None:
     help_message = (
@@ -203,6 +210,7 @@ def main() -> None:
     app.add_handler(CommandHandler("testdb", test_db))
     app.add_handler(CommandHandler("whopays", who_pays))
     app.add_handler(CommandHandler("forfeit", forfeit))
+    app.add_handler(CommandHandler("timenow", time_now))
     app.add_handler(CommandHandler("help", help))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, check_wake_up))
 
