@@ -105,7 +105,7 @@ async def check_wake_up(update: Update, context: CallbackContext) -> None:
         _, _, points, last_awake_date = user_data
         today = now_local.date()
 
-        if now_local.hour == 6 and now_local.minute < 31:
+        if now_local.hour == 6 and now_local.minute < 40:
             if 'awake' in message_text:
                 if last_awake_date != today:
                     points += 1
