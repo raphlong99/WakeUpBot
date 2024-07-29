@@ -1,8 +1,8 @@
 import os
+import psycopg2
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext
 from datetime import datetime
-import json
 import logging
 
 # Set up logging
@@ -10,21 +10,40 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 logger = logging.getLogger(__name__)
 
 TOKEN = os.getenv('TOKEN')
+DATABASE_URL = os.getenv('DATABASE_URL')
 
-if TOKEN is None:
-    raise ValueError("No token provided! Please set the TOKEN environment variable.")
+if TOKEN is None or DATABASE_URL is None:
+    raise ValueError("No token or database URL provided! Please set the TOKEN and DATABASE_URL environment variables.")
 
-# Load or initialize user points
-try:
-    with open('points.json', 'r') as file:
-        user_points = json.load(file)
-except FileNotFoundError:
-    user_points = {}
+# Connect to PostgreSQL database
+conn = psycopg2.connect(DATABASE_URL, sslmode='require')
+cur = conn.cursor()
 
-# Function to save user points to file
-def save_points():
-    with open('points.json', 'w') as file:
-        json.dump(user_points, file)
+# Create table for user points if it doesn't exist
+cur.execute("""
+CREATE TABLE IF NOT EXISTS user_points (
+    user_id BIGINT PRIMARY KEY,
+    username TEXT NOT NULL,
+    points INT DEFAULT 0,
+    last_awake_date DATE
+);
+""")
+conn.commit()
+
+# Function to save user data
+def save_user(user_id, username, points, last_awake_date):
+    cur.execute("""
+    INSERT INTO user_points (user_id, username, points, last_awake_date)
+    VALUES (%s, %s, %s, %s)
+    ON CONFLICT (user_id)
+    DO UPDATE SET username = EXCLUDED.username, points = EXCLUDED.points, last_awake_date = EXCLUDED.last_awake_date;
+    """, (user_id, username, points, last_awake_date))
+    conn.commit()
+
+# Function to load user data
+def load_user(user_id):
+    cur.execute("SELECT user_id, username, points, last_awake_date FROM user_points WHERE user_id = %s;", (user_id,))
+    return cur.fetchone()
 
 # Asynchronous function to start the bot
 async def start(update: Update, context: CallbackContext) -> None:
@@ -33,15 +52,14 @@ async def start(update: Update, context: CallbackContext) -> None:
 # Asynchronous function to create a new user
 async def create_user(update: Update, context: CallbackContext) -> None:
     user_id = update.message.from_user.id
-    user_name = update.message.from_user.username
+    username = update.message.from_user.username
 
-    if user_id not in user_points:
-        user_points[user_id] = {'points': 0, 'username': user_name, 'last_awake_date': None}
-        save_points()
-        logger.info(f"Created new user: {user_name} (ID: {user_id}) with 0 points.")
-        await update.message.reply_text(f'User {user_name} created with 0 points.')
+    if load_user(user_id) is None:
+        save_user(user_id, username, 0, None)
+        logger.info(f"Created new user: {username} (ID: {user_id}) with 0 points.")
+        await update.message.reply_text(f'User {username} created with 0 points.')
     else:
-        await update.message.reply_text(f'User {user_name} already exists.')
+        await update.message.reply_text(f'User {username} already exists.')
 
 # Asynchronous function to check wake-up time and message content
 async def check_wake_up(update: Update, context: CallbackContext) -> None:
@@ -51,48 +69,47 @@ async def check_wake_up(update: Update, context: CallbackContext) -> None:
 
     chat_id = update.message.chat_id
     user_id = update.message.from_user.id
-    user_name = update.message.from_user.username
+    username = update.message.from_user.username
     message_text = update.message.text.lower()
     now = datetime.now()
 
-    # Debug: print current time and chat ID
-    logger.info(f"Received message at {now}. Chat ID: {chat_id}, User ID: {user_id}, Username: {user_name}")
+    logger.info(f"Received message at {now}. Chat ID: {chat_id}, User ID: {user_id}, Username: {username}")
 
-    # Ensure message is from the specific group chat
     if chat_id == -1002211346895:  # Replace with your actual group chat ID
-        if user_id not in user_points:
-            await update.message.reply_text(f'User {user_name} does not exist. Please register using /createuser.')
+        user_data = load_user(user_id)
+        if user_data is None:
+            await update.message.reply_text(f'User {username} does not exist. Please register using /createuser.')
             return
 
-        last_awake_date = user_points[user_id]['last_awake_date']
-        today = now.date().isoformat()
+        _, _, points, last_awake_date = user_data
+        today = now.date()
 
         if now.hour == 6 and now.minute < 31:
             if 'awake' in message_text:
                 if last_awake_date != today:
-                    user_points[user_id]['points'] += 1
-                    user_points[user_id]['last_awake_date'] = today
-                    save_points()
-                    logger.info(f"User {user_name} ({user_id}) earned a point. Total: {user_points[user_id]['points']}")
-                    await update.message.reply_text(f'Great job {user_name}! Your current points: {user_points[user_id]["points"]}')
+                    points += 1
+                    save_user(user_id, username, points, today)
+                    logger.info(f"User {username} ({user_id}) earned a point. Total: {points}")
+                    await update.message.reply_text(f'Great job {username}! Your current points: {points}')
                 else:
-                    await update.message.reply_text(f'You have already earned a point today, {user_name}!')
+                    await update.message.reply_text(f'You have already earned a point today, {username}!')
             else:
-                logger.info(f"Message from {user_name} ({user_id}) does not contain the keyword 'awake'.")
+                logger.info(f"Message from {username} ({user_id}) does not contain the keyword 'awake'.")
                 await update.message.reply_text('Are you sure you are awake?')
         else:
-            logger.info(f"Message from {user_name} ({user_id}) is outside the allowed time window.")
+            logger.info(f"Message from {username} ({user_id}) is outside the allowed time window.")
             await update.message.reply_text('Too late or too early! Try again between 6:00 AM and 6:30 AM.')
     else:
         logger.warning(f"Message from unexpected chat ID: {chat_id}")
 
 # Asynchronous function to display the leaderboard
 async def leaderboard(update: Update, context: CallbackContext) -> None:
+    cur.execute("SELECT username, points FROM user_points ORDER BY points DESC;")
+    users = cur.fetchall()
     leaderboard_message = "Leaderboard:\n"
-    sorted_users = sorted(user_points.values(), key=lambda x: x['points'], reverse=True)
-    for user in sorted_users:
-        leaderboard_message += f"{user['username']}: {user['points']} points\n"
-        logger.info(f"User on leaderboard: {user['username']} with {user['points']} points.")
+    for username, points in users:
+        leaderboard_message += f"{username}: {points} points\n"
+        logger.info(f"User on leaderboard: {username} with {points} points.")
     await update.message.reply_text(leaderboard_message)
 
 # Asynchronous function to get chat ID (for setup purposes)
