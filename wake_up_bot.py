@@ -6,9 +6,22 @@ from datetime import datetime
 import logging
 import pytz
 
-# Set up logging
-logging.basicConfig(format='%(asctime)s - %(name)s - %(level)s - %(message)s', level=logging.INFO)
+# Configure logging
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+# Create a stream handler
+stream_handler = StreamHandler()
+stream_handler.setLevel(logging.INFO)
+
+# Create a formatter
+formatter = Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+stream_handler.setFormatter(formatter)
+
+# Add the handler to the logger
+logger.addHandler(stream_handler)
+
+logger.info("Logging is configured correctly.")
 
 # Load environment variables
 TOKEN = os.getenv('TOKEN')
@@ -105,7 +118,7 @@ async def check_wake_up(update: Update, context: CallbackContext) -> None:
         _, _, points, last_awake_date = user_data
         today = now_local.date()
 
-        if now_local.hour == 6 and now_local.minute < 40:
+        if now_local.hour == 6 and now_local.minute < 31:
             if 'awake' in message_text:
                 if last_awake_date != today:
                     points += 1
@@ -194,19 +207,18 @@ async def help(update: Update, context: CallbackContext) -> None:
     )
     await update.message.reply_text(help_message)
 
-def main() -> None:
-    app = Application.builder().token(TOKEN).build()
+def main():
+    app = Application.builder().token("YOUR_TELEGRAM_BOT_TOKEN").build()
 
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("createuser", create_user))
+    app.add_handler(CommandHandler("createuser", createuser))
     app.add_handler(CommandHandler("leaderboard", leaderboard))
-    app.add_handler(CommandHandler("getchatid", get_chat_id))  # Remove this line after getting the chat ID
-    app.add_handler(CommandHandler("testdb", test_db))
-    app.add_handler(CommandHandler("whopays", who_pays))
-    app.add_handler(CommandHandler("forfeit", forfeit))
-    app.add_handler(CommandHandler("help", help))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, check_wake_up))
+    app.add_handler(CommandHandler("whopays", whopays))
+    app.add_handler(CommandHandler("forfeit", forfeit))
+    app.add_handler(CommandHandler("help", help_command))
 
+    logger.info("Bot is starting...")
     app.run_polling()
 
 if __name__ == '__main__':
