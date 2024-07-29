@@ -6,9 +6,10 @@ from datetime import datetime
 import logging
 
 # Set up logging
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levellevel)s - %(message)s', level=logging.INFO)
+logging.basicConfig(format='%(asctime)s - %(name)s - %(level)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Load environment variables
 TOKEN = os.getenv('TOKEN')
 DATABASE_URL = os.getenv('DATABASE_URL')
 
@@ -55,11 +56,11 @@ def load_all_users():
     cur.execute("SELECT user_id, username, points FROM user_points;")
     return cur.fetchall()
 
-# Asynchronous function to start the bot
+# Command: /start
 async def start(update: Update, context: CallbackContext) -> None:
     await update.message.reply_text('Woof! 🐾 Welcome! Send your wake-up message containing "awake" between 6:00 AM and 6:30 AM to earn points. 🐶\nUse /help to check out all available commands. 🦴')
 
-# Asynchronous function to create a new user
+# Command: /createuser
 async def create_user(update: Update, context: CallbackContext) -> None:
     user_id = update.message.from_user.id
     username = update.message.from_user.username
@@ -74,7 +75,7 @@ async def create_user(update: Update, context: CallbackContext) -> None:
     else:
         await update.message.reply_text(f'User {username} already exists. 🐕')
 
-# Asynchronous function to check wake-up time and message content
+# Function to check wake-up message
 async def check_wake_up(update: Update, context: CallbackContext) -> None:
     if update.message is None:
         logger.warning("Received an update without a message.")
@@ -115,7 +116,7 @@ async def check_wake_up(update: Update, context: CallbackContext) -> None:
     else:
         logger.warning(f"Message from unexpected chat ID: {chat_id}")
 
-# Asynchronous function to display the leaderboard
+# Command: /leaderboard
 async def leaderboard(update: Update, context: CallbackContext) -> None:
     cur.execute("SELECT username, points FROM user_points ORDER BY points DESC;")
     users = cur.fetchall()
@@ -125,12 +126,12 @@ async def leaderboard(update: Update, context: CallbackContext) -> None:
         logger.info(f"User on leaderboard: {username} with {points} points.")
     await update.message.reply_text(leaderboard_message)
 
-# Asynchronous function to get chat ID (for setup purposes)
+# Command: /getchatid (for setup purposes)
 async def get_chat_id(update: Update, context: CallbackContext) -> None:
     chat_id = update.message.chat_id
     await update.message.reply_text(f'Chat ID: {chat_id}')
 
-# Test command to check database connection
+# Command: /testdb (to check database connection)
 async def test_db(update: Update, context: CallbackContext) -> None:
     try:
         cur.execute("SELECT 1;")
@@ -142,7 +143,7 @@ async def test_db(update: Update, context: CallbackContext) -> None:
     except Exception as e:
         await update.message.reply_text(f"Database connection error: {e} 🐕")
 
-# Asynchronous function to determine who pays
+# Command: /whopays
 async def who_pays(update: Update, context: CallbackContext) -> None:
     users = load_all_users()
     if len(users) < 2:
@@ -157,7 +158,7 @@ async def who_pays(update: Update, context: CallbackContext) -> None:
     else:
         await update.message.reply_text(f'It’s a tie! Both {user1[1]} and {user2[1]} have the same points ({user1[2]}). You both split the bill! 🐕')
 
-# Asynchronous function to check if a trip is owed
+# Command: /forfeit
 async def forfeit(update: Update, context: CallbackContext) -> None:
     users = load_all_users()
     if len(users) < 2:
@@ -174,7 +175,7 @@ async def forfeit(update: Update, context: CallbackContext) -> None:
     else:
         await update.message.reply_text('Keep up the good work! Good sleep leads to good productivity. 🐾')
 
-# Asynchronous function to display the help message
+# Command: /help
 async def help(update: Update, context: CallbackContext) -> None:
     help_message = (
         "🐶 Woof! Here are the commands you can use: 🐾\n\n"
@@ -183,7 +184,7 @@ async def help(update: Update, context: CallbackContext) -> None:
         "/leaderboard - Show the leaderboard\n"
         "/whopays - Determine who has to pay based on points\n"
         "/forfeit - Check if a trip is owed based on points difference\n"
-        )
+    )
     await update.message.reply_text(help_message)
 
 def main() -> None:
