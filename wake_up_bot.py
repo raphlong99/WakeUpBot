@@ -64,7 +64,10 @@ async def create_user(update: Update, context: CallbackContext) -> None:
     user_id = update.message.from_user.id
     username = update.message.from_user.username
 
-    if load_user(user_id) is None:
+    user_data = load_user(user_id)
+    logger.info(f"User data for {username}: {user_data}")
+
+    if user_data is None:
         save_user(user_id, username, 0, None)
         logger.info(f"Created new user: {username} (ID: {user_id}) with 0 points.")
         await update.message.reply_text(f'Woof! 🐶 User {username} created with 0 points. Let’s start fetching points! 🦴')
@@ -186,6 +189,8 @@ async def help(update: Update, context: CallbackContext) -> None:
 def main() -> None:
     app = Application.builder().token(TOKEN).build()
 
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("createuser", create_user))
     app.add_handler(CommandHandler("leaderboard", leaderboard))
     app.add_handler(CommandHandler("getchatid", get_chat_id))  # Remove this line after getting the chat ID
     app.add_handler(CommandHandler("testdb", test_db))
