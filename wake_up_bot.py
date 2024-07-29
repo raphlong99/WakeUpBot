@@ -197,6 +197,7 @@ async def help(update: Update, context: CallbackContext) -> None:
         "/leaderboard - Show the leaderboard\n"
         "/whopays - Determine who has to pay based on points\n"
         "/forfeit - Check if a trip is owed based on points difference\n"
+        "/timenow - Check the current local time\n"
     )
     await update.message.reply_text(help_message)
 
