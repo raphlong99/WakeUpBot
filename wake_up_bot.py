@@ -6,7 +6,7 @@ from datetime import datetime
 import logging
 
 # Set up logging
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levellevel)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 TOKEN = os.getenv('TOKEN')
@@ -50,9 +50,14 @@ def load_user(user_id):
     cur.execute("SELECT user_id, username, points, last_awake_date FROM user_points WHERE user_id = %s;", (user_id,))
     return cur.fetchone()
 
+# Function to load all users
+def load_all_users():
+    cur.execute("SELECT user_id, username, points FROM user_points;")
+    return cur.fetchall()
+
 # Asynchronous function to start the bot
 async def start(update: Update, context: CallbackContext) -> None:
-    await update.message.reply_text('Welcome! Send your wake-up message containing "awake" between 6:00 AM and 6:30 AM to earn points.')
+    await update.message.reply_text('Woof! 🐾 Welcome! Send your wake-up message containing "awake" between 6:00 AM and 6:30 AM to earn points. 🐶')
 
 # Asynchronous function to create a new user
 async def create_user(update: Update, context: CallbackContext) -> None:
@@ -62,9 +67,9 @@ async def create_user(update: Update, context: CallbackContext) -> None:
     if load_user(user_id) is None:
         save_user(user_id, username, 0, None)
         logger.info(f"Created new user: {username} (ID: {user_id}) with 0 points.")
-        await update.message.reply_text(f'User {username} created with 0 points.')
+        await update.message.reply_text(f'Woof! 🐶 User {username} created with 0 points. Let’s start fetching points! 🦴')
     else:
-        await update.message.reply_text(f'User {username} already exists.')
+        await update.message.reply_text(f'User {username} already exists. 🐕')
 
 # Asynchronous function to check wake-up time and message content
 async def check_wake_up(update: Update, context: CallbackContext) -> None:
@@ -83,7 +88,7 @@ async def check_wake_up(update: Update, context: CallbackContext) -> None:
     if chat_id == -1002211346895:  # Replace with your actual group chat ID
         user_data = load_user(user_id)
         if user_data is None:
-            await update.message.reply_text(f'User {username} does not exist. Please register using /createuser.')
+            await update.message.reply_text(f'User {username} does not exist. Please register using /createuser. 🐶')
             return
 
         _, _, points, last_awake_date = user_data
@@ -95,15 +100,15 @@ async def check_wake_up(update: Update, context: CallbackContext) -> None:
                     points += 1
                     save_user(user_id, username, points, today)
                     logger.info(f"User {username} ({user_id}) earned a point. Total: {points}")
-                    await update.message.reply_text(f'Great job {username}! Your current points: {points}')
+                    await update.message.reply_text(f'Good job, {username}! You earned a point! 🐾 Your current points: {points} 🏆')
                 else:
-                    await update.message.reply_text(f'You have already earned a point today, {username}!')
+                    await update.message.reply_text(f'You have already earned a point today, {username}! 🐕')
             else:
                 logger.info(f"Message from {username} ({user_id}) does not contain the keyword 'awake'.")
-                await update.message.reply_text('Are you sure you are awake?')
+                await update.message.reply_text('Are you sure you are awake? 🐶')
         else:
             logger.info(f"Message from {username} ({user_id}) is outside the allowed time window.")
-            await update.message.reply_text('Too late or too early! Try again between 6:00 AM and 6:30 AM.')
+            await update.message.reply_text('Too late or too early! Try again between 6:00 AM and 6:30 AM. 🕰️')
     else:
         logger.warning(f"Message from unexpected chat ID: {chat_id}")
 
@@ -111,9 +116,9 @@ async def check_wake_up(update: Update, context: CallbackContext) -> None:
 async def leaderboard(update: Update, context: CallbackContext) -> None:
     cur.execute("SELECT username, points FROM user_points ORDER BY points DESC;")
     users = cur.fetchall()
-    leaderboard_message = "Leaderboard:\n"
+    leaderboard_message = "🏆 Leaderboard 🏆\n"
     for username, points in users:
-        leaderboard_message += f"{username}: {points} points\n"
+        leaderboard_message += f"{username}: {points} points 🐾\n"
         logger.info(f"User on leaderboard: {username} with {points} points.")
     await update.message.reply_text(leaderboard_message)
 
@@ -128,20 +133,65 @@ async def test_db(update: Update, context: CallbackContext) -> None:
         cur.execute("SELECT 1;")
         result = cur.fetchone()
         if result:
-            await update.message.reply_text("Database connection is working!")
+            await update.message.reply_text("Database connection is working! 🐾")
         else:
-            await update.message.reply_text("Database connection test failed.")
+            await update.message.reply_text("Database connection test failed. 🐶")
     except Exception as e:
-        await update.message.reply_text(f"Database connection error: {e}")
+        await update.message.reply_text(f"Database connection error: {e} 🐕")
+
+# Asynchronous function to determine who pays
+async def who_pays(update: Update, context: CallbackContext) -> None:
+    users = load_all_users()
+    if len(users) < 2:
+        await update.message.reply_text('Not enough players to determine who pays. 🐶')
+        return
+
+    user1, user2 = users
+    if user1[2] < user2[2]:
+        await update.message.reply_text(f'Woof! 🐶 {user1[1]} has fewer points ({user1[2]}) and has to pay! 🐾')
+    elif user2[2] < user1[2]:
+        await update.message.reply_text(f'Woof! 🐶 {user2[1]} has fewer points ({user2[2]}) and has to pay! 🐾')
+    else:
+        await update.message.reply_text(f'It’s a tie! Both {user1[1]} and {user2[1]} have the same points ({user1[2]}). You both split the bill! 🐕')
+
+# Asynchronous function to check if a trip is owed
+async def forfeit(update: Update, context: CallbackContext) -> None:
+    users = load_all_users()
+    if len(users) < 2:
+        await update.message.reply_text('Not enough players to determine forfeit status. 🐶')
+        return
+
+    user1, user2 = users
+    point_difference = abs(user1[2] - user2[2])
+    if point_difference >= 14:
+        if user1[2] < user2[2]:
+            await update.message.reply_text(f'Woof! 🐶 {user1[1]} owes a trip to the next vacation place! 🏝️🐾')
+        else:
+            await update.message.reply_text(f'Woof! 🐶 {user2[1]} owes a trip to the next vacation place! 🏝️🐾')
+    else:
+        await update.message.reply_text('Keep up the good work! Good sleep leads to good productivity. 🐾')
+
+# Asynchronous function to display the help message
+async def help(update: Update, context: CallbackContext) -> None:
+    help_message = (
+        "🐶 Woof! Here are the commands you can use: 🐾\n\n"
+        "/start - Start the bot\n"
+        "/createuser - Register as a new user\n"
+        "/leaderboard - Show the leaderboard\n"
+        "/whopays - Determine who has to pay based on points\n"
+        "/forfeit - Check if a trip is owed based on points difference\n"
+    )
+    await update.message.reply_text(help_message)
 
 def main() -> None:
     app = Application.builder().token(TOKEN).build()
 
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("createuser", create_user))
     app.add_handler(CommandHandler("leaderboard", leaderboard))
     app.add_handler(CommandHandler("getchatid", get_chat_id))  # Remove this line after getting the chat ID
     app.add_handler(CommandHandler("testdb", test_db))
+    app.add_handler(CommandHandler("whopays", who_pays))
+    app.add_handler(CommandHandler("forfeit", forfeit))
+    app.add_handler(CommandHandler("help", help))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, check_wake_up))
 
     app.run_polling()
