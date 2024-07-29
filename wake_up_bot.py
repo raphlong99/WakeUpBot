@@ -4,6 +4,7 @@ from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext
 from datetime import datetime
 import logging
+from logging import StreamHandler, Formatter
 import pytz
 
 # Configure logging
@@ -135,6 +136,7 @@ async def check_wake_up(update: Update, context: CallbackContext) -> None:
             await update.message.reply_text('Too late or too early! Try again between 6:00 AM and 6:30 AM. 🕰️')
     else:
         logger.warning(f"Message from unexpected chat ID: {chat_id}")
+
 
 # Command: /leaderboard
 async def leaderboard(update: Update, context: CallbackContext) -> None:
