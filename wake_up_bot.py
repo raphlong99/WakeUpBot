@@ -57,7 +57,7 @@ def load_all_users():
 
 # Asynchronous function to start the bot
 async def start(update: Update, context: CallbackContext) -> None:
-    await update.message.reply_text('Woof! 🐾 Welcome! Send your wake-up message containing "awake" between 6:00 AM and 6:30 AM to earn points. 🐶')
+    await update.message.reply_text('Woof! 🐾 Welcome! Send your wake-up message containing "awake" between 6:00 AM and 6:30 AM to earn points. 🐶\nUse /help to check out all available commands. 🦴')
 
 # Asynchronous function to create a new user
 async def create_user(update: Update, context: CallbackContext) -> None:
@@ -183,7 +183,7 @@ async def help(update: Update, context: CallbackContext) -> None:
         "/leaderboard - Show the leaderboard\n"
         "/whopays - Determine who has to pay based on points\n"
         "/forfeit - Check if a trip is owed based on points difference\n"
-    )
+        )
     await update.message.reply_text(help_message)
 
 def main() -> None:
