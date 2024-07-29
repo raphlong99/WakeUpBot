@@ -16,8 +16,13 @@ if TOKEN is None or DATABASE_URL is None:
     raise ValueError("No token or database URL provided! Please set the TOKEN and DATABASE_URL environment variables.")
 
 # Connect to PostgreSQL database
-conn = psycopg2.connect(DATABASE_URL, sslmode='require')
-cur = conn.cursor()
+try:
+    conn = psycopg2.connect(DATABASE_URL, sslmode='require')
+    cur = conn.cursor()
+    logger.info("Successfully connected to the PostgreSQL database.")
+except Exception as e:
+    logger.error(f"Failed to connect to the PostgreSQL database: {e}")
+    raise
 
 # Create table for user points if it doesn't exist
 cur.execute("""
@@ -117,6 +122,18 @@ async def get_chat_id(update: Update, context: CallbackContext) -> None:
     chat_id = update.message.chat_id
     await update.message.reply_text(f'Chat ID: {chat_id}')
 
+# Test command to check database connection
+async def test_db(update: Update, context: CallbackContext) -> None:
+    try:
+        cur.execute("SELECT 1;")
+        result = cur.fetchone()
+        if result:
+            await update.message.reply_text("Database connection is working!")
+        else:
+            await update.message.reply_text("Database connection test failed.")
+    except Exception as e:
+        await update.message.reply_text(f"Database connection error: {e}")
+
 def main() -> None:
     app = Application.builder().token(TOKEN).build()
 
@@ -124,6 +141,7 @@ def main() -> None:
     app.add_handler(CommandHandler("createuser", create_user))
     app.add_handler(CommandHandler("leaderboard", leaderboard))
     app.add_handler(CommandHandler("getchatid", get_chat_id))  # Remove this line after getting the chat ID
+    app.add_handler(CommandHandler("testdb", test_db))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, check_wake_up))
 
     app.run_polling()
