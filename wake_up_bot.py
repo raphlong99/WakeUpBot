@@ -93,7 +93,7 @@ async def check_wake_up(update: Update, context: CallbackContext) -> None:
     local_tz = pytz.timezone('Asia/Singapore')
     now_local = now_utc.astimezone(local_tz)
 
-    logger.info(f"Received message at {now}. Chat ID: {chat_id}, User ID: {user_id}, Username: {username}")
+    logger.info(f"Received message at {now_local}. Chat ID: {chat_id}, User ID: {user_id}, Username: {username}")
 
     if chat_id == -1002211346895:  # Replace with your actual group chat ID
         user_data = load_user(user_id)
