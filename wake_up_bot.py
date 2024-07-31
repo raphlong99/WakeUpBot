@@ -5,6 +5,7 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 from datetime import datetime
 import logging
 import pytz
+import openai
 
 # Set up logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
@@ -13,9 +14,13 @@ logger = logging.getLogger(__name__)
 # Load environment variables
 TOKEN = os.getenv('TOKEN')
 DATABASE_URL = os.getenv('DATABASE_URL')
+OPENAI_API_KEY = os.getenv('LOUIE_BOT_API_KEY')
 
-if TOKEN is None or DATABASE_URL is None:
-    raise ValueError("No token or database URL provided! Please set the TOKEN and DATABASE_URL environment variables.")
+if TOKEN is None or DATABASE_URL is None or OPENAI_API_KEY is None:
+    raise ValueError("Environment variables TOKEN, DATABASE_URL, and LOUIE_BOT_API_KEY are required!")
+
+# Initialize OpenAI
+openai.api_key = OPENAI_API_KEY
 
 # Connect to PostgreSQL database
 try:
@@ -134,6 +139,26 @@ async def check_wake_up(update: Update, context: CallbackContext) -> None:
     else:
         logger.warning(f"Message from unexpected chat ID: {chat_id}")
 
+# Function to handle messages containing "louie"
+async def handle_louie_message(update: Update, context: CallbackContext) -> None:
+    if update.message is None:
+        logger.warning("Received an update without a message.")
+        return
+
+    user_message = update.message.text
+    response = get_louie_response(user_message)
+    await update.message.reply_text(response)
+
+# Function to get a response from ChatGPT as Louie the dog
+def get_louie_response(user_message):
+    prompt = f"You are Louie, a cute and friendly dog. Respond to the following message in a cute and dog-like way: {user_message}"
+    response = openai.Completion.create(
+        engine="text-davinci-003",
+        prompt=prompt,
+        max_tokens=150
+    )
+    return response.choices[0].text.strip()
+
 # Command: /leaderboard
 async def leaderboard(update: Update, context: CallbackContext) -> None:
     cur.execute("SELECT username, points FROM user_points ORDER BY points DESC;")
@@ -198,7 +223,7 @@ async def time_now(update: Update, context: CallbackContext) -> None:
     now_utc = datetime.now(pytz.utc)
     local_tz = pytz.timezone('Asia/Singapore')
     now_local = now_utc.astimezone(local_tz)
-    await update.message.reply_text(f'The current local time is: {now_local.strftime('%Y-%m-%d %H:%M:%S %Z%z')} 🕰️')
+    await update.message.reply_text(f'The current local time is: {now_local.strftime("%Y-%m-%d %H:%M:%S %Z%z")} 🕰️')
 
 # Command: /help
 async def help(update: Update, context: CallbackContext) -> None:
@@ -210,9 +235,11 @@ async def help(update: Update, context: CallbackContext) -> None:
         "/whopays - Determine who has to pay based on points\n"
         "/forfeit - Check if a trip is owed based on points difference\n"
         "/timenow - Check the current local time\n"
+        "/help - Show this help message\n"
     )
     await update.message.reply_text(help_message)
 
+# Main function to run the bot
 def main() -> None:
     app = Application.builder().token(TOKEN).build()
 
@@ -226,6 +253,7 @@ def main() -> None:
     app.add_handler(CommandHandler("timenow", time_now))
     app.add_handler(CommandHandler("help", help))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, check_wake_up))
+    app.add_handler(MessageHandler(filters.TEXT & filters.regex('.*louie.*'), handle_louie_message))
 
     app.run_polling()
 
