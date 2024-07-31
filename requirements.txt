@@ -2,4 +2,4 @@ python-telegram-bot==20.0
 psycopg2-binary
 pytz
 urllib3==1.26.7
-openai
+openai==0.28.0
