@@ -1,4 +1,3 @@
-import re
 import os
 import psycopg2
 from telegram import Update
@@ -145,11 +144,20 @@ async def check_wake_up(update: Update, context: CallbackContext) -> None:
 
 # Function to handle messages containing "louie"
 async def handle_louie_message(update: Update, context: CallbackContext) -> None:
-    logger.info(f"Handling message from {update.message.from_user.username} containing 'louie'")
-    
     if update.message is None:
         logger.warning("Received an update without a message.")
         return
+
+    chat_id = update.message.chat_id
+    user_id = update.message.from_user.id
+    username = update.message.from_user.username
+    message_text = update.message.text.lower()
+    
+    if 'louie' not in message_text:
+        logger.info(f"Message from {username} ({user_id}) does not contain the keyword 'louie'. Ignoring.")
+        return  # Ensure other handlers can process the message
+
+    logger.info(f"Handling message from {username} containing 'louie'")
 
     user_message = update.message.text
     response = get_louie_response(user_message)
@@ -199,7 +207,7 @@ async def who_pays(update: Update, context: CallbackContext) -> None:
     if len(users) < 2:
         await update.message.reply_text('Not enough players to determine who pays. 🐶')
         return
-    
+
     user1, user2 = users[:2]  # Ensure only the first two users are considered
     if user1[2] < user2[2]:
         await update.message.reply_text(f'Woof! 🐶 {user1[1]} has fewer points ({user1[2]}) and has to pay! 🐾')
@@ -260,7 +268,7 @@ def main() -> None:
     app.add_handler(CommandHandler("timenow", time_now))
     app.add_handler(CommandHandler("help", help))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, check_wake_up))
-    app.add_handler(MessageHandler(filters.TEXT & filters.Regex(re.compile('louie', re.IGNORECASE)), handle_louie_message))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & filters.Regex(re.compile('louie', re.IGNORECASE)), handle_louie_message))
 
     logger.info("Application started and handlers are set.")
     app.run_polling()
