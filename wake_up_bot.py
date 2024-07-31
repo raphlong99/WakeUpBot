@@ -169,12 +169,14 @@ async def handle_louie_message(update: Update, context: CallbackContext) -> None
 # Function to get a response from ChatGPT as Louie the dog
 def get_louie_response(user_message):
     prompt = f"You are Louie, a cute and friendly dog. Respond to the following message in a cute and dog-like way: {user_message}"
-    response = openai.Completion.create(
-        engine="text-davinci-003",
-        prompt=prompt,
-        max_tokens=150
+    response = openai.ChatCompletion.create(
+        model="gpt-4",  # or "gpt-4" if you have access
+        messages=[
+            {"role": "system", "content": "You are Louie, a cute and friendly dog."},
+            {"role": "user", "content": user_message},
+        ]
     )
-    return response.choices[0].text.strip()
+    return response.choices[0].message['content'].strip()
 
 # Command: /leaderboard
 async def leaderboard(update: Update, context: CallbackContext) -> None:
