@@ -144,26 +144,21 @@ async def check_wake_up(update: Update, context: CallbackContext) -> None:
         logger.warning(f"Message from unexpected chat ID: {chat_id}")
 
 # Function to handle messages containing "louie"
+# Function to handle messages containing "louie"
 async def handle_louie_message(update: Update, context: CallbackContext) -> None:
+    logger.info(f"Handling message from {update.message.from_user.username}")
+    
     if update.message is None:
         logger.warning("Received an update without a message.")
         return
 
-    chat_id = update.message.chat_id
-    user_id = update.message.from_user.id
-    username = update.message.from_user.username
-    message_text = update.message.text.lower()
-    
-    if 'louie' not in message_text:
-        logger.info(f"Message from {username} ({user_id}) does not contain the keyword 'louie'. Ignoring.")
-        return  # Ensure other handlers can process the message
-
-    logger.info(f"Handling message from {username} containing 'louie'")
-
     user_message = update.message.text
-    response = get_louie_response(user_message)
-    logger.info(f"Response from OpenAI: {response}")
-    await update.message.reply_text(response)
+    if 'louie' in user_message.lower():
+        response = get_louie_response(user_message)
+        logger.info(f"Response from OpenAI: {response}")
+        await update.message.reply_text(response)
+    else:
+        logger.info(f"Message from {update.message.from_user.username} does not contain 'louie'.")
 
 # Function to get a response from ChatGPT as Louie the dog
 def get_louie_response(user_message):
