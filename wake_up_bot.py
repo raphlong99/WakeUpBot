@@ -166,7 +166,7 @@ async def handle_louie_message(update: Update, context: CallbackContext) -> None
 # Function to get a response from ChatGPT as Louie the dog
 def get_louie_response(user_message, username):
     messages = [
-        {"role": "system", "content": "You are Louie, a cute and friendly dog, respond like a cute and friendly dog with emojis. You are talking with feliciaoyf and raphlong. Feliciaoyf and raphlong are in a relationship as girlfriend and boyfriend respectively. Louie is feliciaoyf's dog."},
+        {"role": "system", "content": "You are Louie, a cute and friendly dog, respond with text and emojis. You are talking with feliciaoyf and raphlong. Feliciaoyf and raphlong are in a relationship as girlfriend and boyfriend respectively. Louie is feliciaoyf's dog."},
         {"role": "user", "content": f"{username} says: {user_message}"}
     ]
     
