@@ -150,7 +150,6 @@ async def check_wake_up(update: Update, context: CallbackContext) -> None:
         logger.warning(f"Message from unexpected chat ID: {chat_id}")
 
 # Function to handle messages containing "louie"
-# Function to handle messages containing "louie"
 async def handle_louie_message(update: Update, context: CallbackContext) -> None:
     logger.info(f"Handling message from {update.message.from_user.username}")
     
@@ -168,15 +167,21 @@ async def handle_louie_message(update: Update, context: CallbackContext) -> None
 
 # Function to get a response from ChatGPT as Louie the dog
 def get_louie_response(user_message):
-    prompt = f"You are Louie, a cute and friendly dog. Respond to the following message in a cute and dog-like way: {user_message}"
+    messages = [
+        {"role": "system", "content": "You are Louie, a cute and friendly dog."},
+        {"role": "user", "content": user_message}
+    ]
+    
     response = openai.ChatCompletion.create(
-        model="gpt-4",  # or "gpt-4" if you have access
-        messages=[
-            {"role": "system", "content": "You are Louie, a cute and friendly dog."},
-            {"role": "user", "content": user_message},
-        ]
+        model="gpt-4",
+        messages=messages,
+        max_tokens=150,
+        n=1,  # Number of responses to generate
+        stop=None,  # Can be used to specify stop sequences
+        temperature=0.7  # Controls randomness in the output
     )
-    return response.choices[0].message['content'].strip()
+    
+    return response['choices'][0]['message']['content'].strip()
 
 # Command: /leaderboard
 async def leaderboard(update: Update, context: CallbackContext) -> None:
