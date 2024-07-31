@@ -115,6 +115,17 @@ async def check_wake_up(update: Update, context: CallbackContext) -> None:
                 save_user(user_id, username, points, today)
                 logger.info(f"User {username} ({user_id}) earned a point. Total: {points}")
                 await update.message.reply_text(f'Good job, {username}! You earned a point! 🐾 Your current points: {points} 🏆')
+                
+                # Check if the message is from feliciaoyf and the date is 1st August 2024
+                if username == 'feliciaoyf' and now_local.strftime('%Y-%m-%d') == '2024-08-01':
+                    special_message = (
+                        "🌸 Good morning, Felicia! 🌸\n\n"
+                        "Louie here, wishing the most amazing girlfriend a very Happy National Girlfriend Day! 💖\n"
+                        "Did you know? Our first date was exactly 143 days ago! 🥳💕\n"
+                        "You are the sunshine in my life, and I cherish every moment we spend together. ☀️🐾\n"
+                        "Let's make today as wonderful as you are! 💐✨"
+                    )
+                    await update.message.reply_text(special_message)
             else:
                 await update.message.reply_text(f'You have already earned a point today, {username}! 🐕')
         else:
