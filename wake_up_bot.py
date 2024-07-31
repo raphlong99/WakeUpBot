@@ -10,7 +10,7 @@ import openai
 
 # Set up logging
 logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', 
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
 )
 logger = logging.getLogger(__name__)
@@ -199,8 +199,8 @@ async def who_pays(update: Update, context: CallbackContext) -> None:
     if len(users) < 2:
         await update.message.reply_text('Not enough players to determine who pays. 🐶')
         return
-
-    user1, user2 = users
+    
+    user1, user2 = users[:2]  # Ensure only the first two users are considered
     if user1[2] < user2[2]:
         await update.message.reply_text(f'Woof! 🐶 {user1[1]} has fewer points ({user1[2]}) and has to pay! 🐾')
     elif user2[2] < user1[2]:
@@ -215,7 +215,7 @@ async def forfeit(update: Update, context: CallbackContext) -> None:
         await update.message.reply_text('Not enough players to determine forfeit status. 🐶')
         return
 
-    user1, user2 = users
+    user1, user2 = users[:2]  # Ensure only the first two users are considered
     point_difference = abs(user1[2] - user2[2])
     if point_difference >= 14:
         if user1[2] < user2[2]:
@@ -253,7 +253,7 @@ def main() -> None:
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("createuser", create_user))
     app.add_handler(CommandHandler("leaderboard", leaderboard))
-    app.add_handler(CommandHandler("getchatid", get_chat_id))  # Remove with your actual group chat ID
+    app.add_handler(CommandHandler("getchatid", get_chat_id))  # Remove this line after getting the chat ID
     app.add_handler(CommandHandler("testdb", test_db))
     app.add_handler(CommandHandler("whopays", who_pays))
     app.add_handler(CommandHandler("forfeit", forfeit))
