@@ -1,4 +1,4 @@
-import re
+
 import os
 import psycopg2
 from telegram import Update
@@ -95,6 +95,12 @@ async def check_wake_up(update: Update, context: CallbackContext) -> None:
     user_id = update.message.from_user.id
     username = update.message.from_user.username
     message_text = update.message.text.lower()
+    
+    # Check if the message contains "louie" first
+    if 'louie' in message_text:
+        logger.info("handling louie message")
+        await handle_louie_message(update, context)
+        return  # Ensure other handlers can process the message
     
     if 'awake' not in message_text:
         logger.info(f"Message from {username} ({user_id}) does not contain the keyword 'awake'. Ignoring.")
