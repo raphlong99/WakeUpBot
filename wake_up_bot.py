@@ -158,12 +158,9 @@ async def handle_louie_message(update: Update, context: CallbackContext) -> None
         return
 
     user_message = update.message.text
-    if 'louie' in user_message.lower():
-        response = get_louie_response(user_message)
-        logger.info(f"Response from OpenAI: {response}")
-        await update.message.reply_text(response)
-    else:
-        logger.info(f"Message from {update.message.from_user.username} does not contain 'louie'.")
+    response = get_louie_response(user_message)
+    logger.info(f"Response from OpenAI: {response}")
+    await update.message.reply_text(response)
 
 # Function to get a response from ChatGPT as Louie the dog
 def get_louie_response(user_message):
@@ -173,15 +170,14 @@ def get_louie_response(user_message):
     ]
     
     response = openai.ChatCompletion.create(
-        model="gpt-4",
+        model="gpt-4",  # Use "gpt-4" or "gpt-4-turbo" based on your subscription
         messages=messages,
         max_tokens=150,
-        n=1,  # Number of responses to generate
-        stop=None,  # Can be used to specify stop sequences
-        temperature=0.7  # Controls randomness in the output
+        n=1,
+        temperature=0.7
     )
     
-    return response['choices'][0]['message']['content'].strip()
+    return response.choices[0].message['content'].strip()
 
 # Command: /leaderboard
 async def leaderboard(update: Update, context: CallbackContext) -> None:
