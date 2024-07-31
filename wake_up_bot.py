@@ -9,7 +9,7 @@ import pytz
 import openai
 
 # Set up logging
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname=s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Load environment variables
@@ -95,7 +95,7 @@ async def check_wake_up(update: Update, context: CallbackContext) -> None:
     
     if 'awake' not in message_text:
         logger.info(f"Message from {username} ({user_id}) does not contain the keyword 'awake'. Ignoring.")
-        return
+        return  # Ensure other handlers can process the message
 
     # Get current UTC time
     now_utc = datetime.now(pytz.utc)
@@ -256,8 +256,8 @@ def main() -> None:
     app.add_handler(CommandHandler("forfeit", forfeit))
     app.add_handler(CommandHandler("timenow", time_now))
     app.add_handler(CommandHandler("help", help))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, check_wake_up))
     app.add_handler(MessageHandler(filters.TEXT & filters.Regex(re.compile('louie', re.IGNORECASE)), handle_louie_message))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, check_wake_up))
 
     logger.info("Application started and handlers are set.")
     app.run_polling()
