@@ -257,7 +257,7 @@ def main() -> None:
     app.add_handler(CommandHandler("timenow", time_now))
     app.add_handler(CommandHandler("help", help))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, check_wake_up))
-    app.add_handler(MessageHandler(filters.TEXT & filters.Regex('louie', flags=re.IGNORECASE), handle_louie_message))
+    app.add_handler(MessageHandler(filters.TEXT & filters.Regex(re.compile('louie', re.IGNORECASE)), handle_louie_message))
 
     logger.info("Application started and handlers are set.")
     app.run_polling()
