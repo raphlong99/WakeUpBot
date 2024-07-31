@@ -156,18 +156,26 @@ async def handle_louie_message(update: Update, context: CallbackContext) -> None
     if update.message is None:
         logger.warning("Received an update without a message.")
         return
+    
+
 
     user_message = update.message.text
     username = update.message.from_user.username
-    response = get_louie_response(user_message, username)
+    # Map usernames to real names
+    name_mapping = {
+        'feliciaoyf': 'Felicia',
+        'raphlong': 'Raphael'
+    }
+    real_name = name_mapping.get(username, username)
+    response = get_louie_response(user_message, real_name)
     logger.info(f"Response from OpenAI: {response}")
     await update.message.reply_text(response)
 
 # Function to get a response from ChatGPT as Louie the dog
-def get_louie_response(user_message, username):
+def get_louie_response(user_message, real_name):
     messages = [
-        {"role": "system", "content": "You are Louie, a cute and friendly dog, respond with text and emojis. You are talking with feliciaoyf and raphlong. Feliciaoyf and raphlong are in a relationship as girlfriend and boyfriend respectively. Louie is feliciaoyf's dog."},
-        {"role": "user", "content": f"{username} says: {user_message}"}
+        {"role": "system", "content": "You are Louie, a cute and friendly dog, respond with text and emojis. You are talking with Felicia and Raphael. Feliciao and Raphael are in a relationship as girlfriend and boyfriend respectively. Louie is Felicia's dog."},
+        {"role": "user", "content": f"{real_name} says: {user_message}"}
     ]
     
     response = openai.ChatCompletion.create(
