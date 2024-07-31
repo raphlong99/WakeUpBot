@@ -253,7 +253,7 @@ def main() -> None:
     app.add_handler(CommandHandler("timenow", time_now))
     app.add_handler(CommandHandler("help", help))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, check_wake_up))
-    app.add_handler(MessageHandler(filters.TEXT & filters.regex('.*louie.*'), handle_louie_message))
+    app.add_handler(MessageHandler(filters.TEXT & filters.Regex('.*louie.*'), handle_louie_message))
 
     app.run_polling()
 
