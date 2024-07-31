@@ -158,7 +158,8 @@ async def handle_louie_message(update: Update, context: CallbackContext) -> None
         return
 
     user_message = update.message.text
-    response = get_louie_response(user_message)
+    username = update.message.from_user.username
+    response = get_louie_response(user_message, username)
     logger.info(f"Response from OpenAI: {response}")
     await update.message.reply_text(response)
 
