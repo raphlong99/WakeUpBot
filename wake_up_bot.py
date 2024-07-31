@@ -141,12 +141,15 @@ async def check_wake_up(update: Update, context: CallbackContext) -> None:
 
 # Function to handle messages containing "louie"
 async def handle_louie_message(update: Update, context: CallbackContext) -> None:
+    logger.info(f"Handling message from {update.message.from_user.username} containing 'louie'")
+    
     if update.message is None:
         logger.warning("Received an update without a message.")
         return
 
     user_message = update.message.text
     response = get_louie_response(user_message)
+    logger.info(f"Response from OpenAI: {response}")
     await update.message.reply_text(response)
 
 # Function to get a response from ChatGPT as Louie the dog
