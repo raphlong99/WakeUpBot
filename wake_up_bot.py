@@ -9,7 +9,10 @@ import pytz
 import openai
 
 # Set up logging
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname=s - %(message)s', level=logging.INFO)
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', 
+    level=logging.INFO
+)
 logger = logging.getLogger(__name__)
 
 # Load environment variables
@@ -250,14 +253,14 @@ def main() -> None:
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("createuser", create_user))
     app.add_handler(CommandHandler("leaderboard", leaderboard))
-    app.add_handler(CommandHandler("getchatid", get_chat_id))  # Remove this line after getting the chat ID
+    app.add_handler(CommandHandler("getchatid", get_chat_id))  # Remove with your actual group chat ID
     app.add_handler(CommandHandler("testdb", test_db))
     app.add_handler(CommandHandler("whopays", who_pays))
     app.add_handler(CommandHandler("forfeit", forfeit))
     app.add_handler(CommandHandler("timenow", time_now))
     app.add_handler(CommandHandler("help", help))
-    app.add_handler(MessageHandler(filters.TEXT & filters.Regex(re.compile('louie', re.IGNORECASE)), handle_louie_message))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, check_wake_up))
+    app.add_handler(MessageHandler(filters.TEXT & filters.Regex(re.compile('louie', re.IGNORECASE)), handle_louie_message))
 
     logger.info("Application started and handlers are set.")
     app.run_polling()
