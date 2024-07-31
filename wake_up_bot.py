@@ -1,3 +1,4 @@
+import re
 import os
 import psycopg2
 from telegram import Update
